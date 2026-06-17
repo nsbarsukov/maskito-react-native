@@ -1,17 +1,11 @@
-import {
-  Maskito,
-  MaskitoElement,
-  MaskitoOptions,
-  maskitoTransform,
-} from "@maskito/core";
+import {Maskito, MaskitoOptions, maskitoTransform} from "@maskito/core";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import type {
   TextInputChangeEvent,
   TextInputProps,
   ReactNativeElement,
 } from "react-native";
-
-import {MaskitoElementHeadless} from "./element";
+import {createHeadlessElement} from "./element";
 
 const NOOP_EVENT = { preventDefault: () => {} } as unknown as any;
 
@@ -23,9 +17,13 @@ const NOOP_EVENT = { preventDefault: () => {} } as unknown as any;
 export function useMaskito({
   options,
   defaultValue = "",
+  maxLength,
   onChange: userOnChange,
   onChangeText: userOnChangeText,
-}: Pick<TextInputProps, "onChange" | "onChangeText" | "defaultValue"> & {
+}: Pick<
+  TextInputProps,
+  "onChange" | "onChangeText" | "defaultValue" | "maxLength"
+> & {
   readonly options: MaskitoOptions;
 }): Pick<TextInputProps, "onChange" | "value" | "selection"> {
   const [selection, setSelection] = useState<TextInputProps["selection"]>();
@@ -34,11 +32,7 @@ export function useMaskito({
   );
 
   const mask = useMemo(
-    () =>
-      new Maskito(
-        new MaskitoElementHeadless() as unknown as MaskitoElement,
-        options,
-      ),
+    () => new Maskito(createHeadlessElement({ value, maxLength }), options),
     [options],
   );
 
