@@ -1,10 +1,24 @@
-import {MaskitoOptions} from '@maskito/core';
 import {StyleSheet, Text, TextInput, View} from 'react-native';
+import {MaskitoOptions} from '@maskito/core';
+import {maskitoDate, maskitoNumber, maskitoTime} from '@maskito/kit';
+import {maskitoPhone} from '@maskito/phone';
+import metadata from 'libphonenumber-js/min/metadata';
 
 import {useMaskito} from './maskito-react-native';
 
+const numberMask = maskitoNumber({
+  maximumFractionDigits: 2,
+  min: 0,
+  max: 100,
+  postfix: '%',
+});
+
+const dateMask = maskitoDate({locale: 'lt-LT'});
+
+const timeMask = maskitoTime({mode: 'HH:MM'});
+
 // +1 (555) 123-45-67
-const phoneMask: MaskitoOptions = {
+const usaPhoneMask: MaskitoOptions = {
   mask: Array.from('+1 (###) ###-##-##').map(x => x === '#' ? /\d/ : x)
 };
 
@@ -21,17 +35,48 @@ const cardMask: MaskitoOptions = {
   ],
 };
 
+const autoPhoneMask = maskitoPhone({
+    metadata,
+    strict: false,
+    countryIsoCode: 'RU',
+});
+
+
 export default function App() {
-  const phone = useMaskito({options: phoneMask});
+  const number = useMaskito({options: numberMask, defaultValue: '42%'});
+  const date = useMaskito({options: dateMask});
+  const time = useMaskito({options: timeMask});
+  const usaPhone = useMaskito({options: usaPhoneMask});
   const card = useMaskito({options: cardMask});
+  const anyPhone = useMaskito({options: autoPhoneMask});
 
   return (
     <View style={styles.container}>
-      <Text>Phone</Text>
+      <Text>Number</Text>
+      <TextInput {...number} style={styles.input} />
+
+      <Text>Date</Text>
+      <TextInput 
+        {...date} 
+        style={styles.input} 
+        placeholder="yyyy/mm/dd"
+        placeholderTextColor="gray" 
+      />
+
+      <Text>Time</Text>
+      <TextInput 
+        {...time} 
+        style={styles.input} 
+        inputMode="decimal"
+        placeholder="HH:MM"
+        placeholderTextColor="gray" 
+      />
+
+      <Text>USA Phone</Text>
       <TextInput
-        {...phone}
+        {...usaPhone}
         style={styles.input}
-        placeholder="+1 (555) 123-45-67"
+        placeholder="+1 (___) ___-__-__"
         placeholderTextColor="gray"
       />
 
@@ -39,9 +84,12 @@ export default function App() {
       <TextInput
         {...card}
         style={styles.input}
-        placeholder="1234 5678 9012 3456"
+        placeholder="0000 0000 0000 0000"
         placeholderTextColor="gray"
       />
+
+      <Text>Any country phone number</Text>
+      <TextInput {...anyPhone} style={styles.input} />
     </View>
   );
 }
@@ -49,9 +97,10 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     backgroundColor: '#ecf0f1',
     padding: 8,
+    paddingTop: 64,
   },
   input: {
     height: 40,

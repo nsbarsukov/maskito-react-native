@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "@maskito/core": "^5.3.1",
+    "@maskito/kit": "^5.3.1",
+    "@maskito/phone": "^5.3.1",
     "expo": "^56.0.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
