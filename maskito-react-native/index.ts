@@ -10,16 +10,17 @@ import {createHeadlessElement} from "./element";
 const NOOP_EVENT = { preventDefault: () => {} } as unknown as any;
 
 /**
- * React Native binding for Maskito
- *
- * <TextInput {...useMaskito(...)} />
+ * ```jsx
+ * const dateMask = useMaskito(...);
+ * <TextInput {...dateMask} placeholder="dd/mm/yyy" />
+ * ```
  */
 export function useMaskito({
   options,
   defaultValue = "",
   maxLength,
+  onChangeText,
   onChange: userOnChange,
-  onChangeText: userOnChangeText,
 }: Pick<
   TextInputProps,
   "onChange" | "onChangeText" | "defaultValue" | "maxLength"
@@ -38,33 +39,31 @@ export function useMaskito({
 
   const onChange = useCallback(
     (e: TextInputChangeEvent) => {
-      const rawValue = e.nativeEvent.text;
-      const { from, to, inserted } = reconstructEdit(
-        value,
-        rawValue,
-        getSelection(e).start,
-      );
+      const { selectionStart, selectionEnd, data } = reconstructEdit(value, {
+        value: e.nativeEvent.text,
+        selection: getSelection(e),
+      });
 
       mask["element"].value = value;
-      mask["element"].selectionStart = from;
-      mask["element"].selectionEnd = to;
+      mask["element"].selectionStart = selectionStart;
+      mask["element"].selectionEnd = selectionEnd;
       mask["upcomingElementState"] = null;
 
-      if (inserted) {
+      if (data) {
         mask["handleInsert"](
           NOOP_EVENT, // TODO: reorder order of arguments – make `event` OPTIONAL 2nd argument
-          inserted,
+          data,
         );
       } else {
         mask["handleDelete"]({
-          event: NOOP_EVENT, // TODO: reorder order of arguments – make `event` OPTIONAL 2nd argument
-          selection: [from, to],
-          isForward: false,
+          event: NOOP_EVENT, // TODO: make `event` OPTIONAL argument
+          isForward: false, // TODO: make `isForward` OPTIONAL argument
+          selection: [selectionStart, selectionEnd],
         });
       }
 
       const next = mask["upcomingElementState"] ??
-        // TODO: refactor `Maskito.handleDelete()` to fill `upcomingElementState` with non-null value even on presses Backspace/Delete for the fixed value
+        // TODO: refactor `Maskito.handleDelete()` to fill `upcomingElementState` with non-null value (equals to previous state) even on presses Backspace/Delete for the fixed value
         // Then drop this fallback
         {
           value: mask["element"].value,
@@ -80,10 +79,16 @@ export function useMaskito({
 
       setSelection({ start: next.selection[0], end: next.selection[1] });
 
-      userOnChange?.(e);
-      userOnChangeText?.(next.value);
+      userOnChange?.({
+        ...e,
+        nativeEvent: {
+          ...e.nativeEvent,
+          text: next.value,
+        },
+      });
+      onChangeText?.(next.value);
     },
-    [mask, value, userOnChange, userOnChangeText],
+    [mask, value, userOnChange, onChangeText],
   );
 
   // Release the one-shot controlled selection after it has been applied it, so the
@@ -99,24 +104,31 @@ export function useMaskito({
 
 function reconstructEdit(
   previous: string,
-  next: string,
-  caret: number,
-): { from: number; to: number; inserted: string } {
-  const minLength = Math.min(previous.length, next.length);
+  {
+    value,
+    selection,
+  }: { value: string; selection: Required<TextInputProps>["selection"] },
+): { selectionStart: number; selectionEnd: number; data: string } {
+  const { start } = selection;
+  const minLength = Math.min(previous.length, value.length);
 
   let prefix = 0;
 
-  while (prefix < minLength && previous[prefix] === next[prefix]) {
+  while (prefix < minLength && previous[prefix] === value[prefix]) {
     prefix += 1;
   }
 
-  const to = Math.max(
+  const selectionEnd = Math.max(
     0,
-    Math.min(previous.length, previous.length - next.length + caret),
+    Math.min(previous.length, previous.length - value.length + start),
   );
-  const from = Math.max(0, Math.min(prefix, caret, to));
+  const selectionStart = Math.max(0, Math.min(prefix, start, selectionEnd));
 
-  return { from, to, inserted: next.slice(from, caret) };
+  return {
+    selectionStart,
+    selectionEnd,
+    data: value.slice(selectionStart, start),
+  };
 }
 
 function getSelection({
