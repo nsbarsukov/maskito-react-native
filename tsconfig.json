@@ -1,4 +1,14 @@
 {
-  "compilerOptions": {},
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@maskito/core": ["./submodules/maskito/projects/core/src"],
+      "@maskito/kit": ["./submodules/maskito/projects/kit/src"],
+      "@maskito/phone": ["./submodules/maskito/projects/phone/src"],
+      "@maskito/react-native": ["./submodules/maskito/projects/react-native/src"]
+    }
+  },
+  "exclude": ["submodules"]
 }

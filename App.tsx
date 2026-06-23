@@ -4,7 +4,7 @@ import {maskitoDate, maskitoNumber, maskitoTime} from '@maskito/kit';
 import {maskitoPhone} from '@maskito/phone';
 import metadata from 'libphonenumber-js/min/metadata';
 
-import {useMaskito} from './maskito-react-native';
+import {useMaskito} from '@maskito/react-native';
 
 const numberMask = maskitoNumber({
   maximumFractionDigits: 2,

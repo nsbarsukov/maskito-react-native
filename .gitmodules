@@ -1,0 +1,4 @@
+[submodule "submodules/maskito"]
+	path = submodules/maskito
+	url = https://github.com/taiga-family/maskito.git
+	branch = react-native
